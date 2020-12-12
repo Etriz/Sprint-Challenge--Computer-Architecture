@@ -27,7 +27,7 @@ class CPU:
         self.reg = [0] * 8
         self.reg[7] = 0xF4
         self.PC = 0
-        self.FL = 0
+        self.FL = 0b00000000  # 00000LGE
         self.ram = [0] * 256
         self.halted = False
 
@@ -79,6 +79,16 @@ class CPU:
         # elif op == "SUB": etc
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
+        elif op == "CMP":
+            if self.reg[reg_a] < self.reg[reg_b]:
+                # print(f"{self.reg[cmd_a]} < {self.reg[cmd_b]}")
+                self.FL = 0b00000100
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                # print(f"{self.reg[cmd_a]} > {self.reg[cmd_b]}")
+                self.FL = 0b00000010
+            elif self.reg[reg_a] == self.reg[reg_b]:
+                # print(f"{self.reg[cmd_a]} = {self.reg[cmd_b]}")
+                self.FL = 0b00000001
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -148,20 +158,32 @@ class CPU:
                 self.ram_write(self.PC + 2, self.reg[7])
                 # it jumps to the address stored in that register
                 self.PC = self.reg[cmd_a]
-                counter_advance -= 2  # adjust becuase we are going right to the address
+                counter_advance -= 2  # adjust becuase we are jumping to the address
             elif op == RET:
                 # doesn't take in any operands, sets the program counter to the topmost element of the stack and pop it
                 self.PC = self.ram_read(self.reg[7])
                 self.reg[7] += 1
-                counter_advance -= 1  # adjust becuase we are going right to the address
+                counter_advance -= 1  # adjust becuase we are jumping to the address
+            # ! commands for sprint
             elif op == CMP:
-                pass
+                self.alu("CMP", cmd_a, cmd_b)
             elif op == JMP:
-                pass
+                # jump to address stored in given register
+                self.PC = self.reg[cmd_a]
+                counter_advance -= 2  # adjust becuase we are jumping to the address
             elif op == JEQ:
-                pass
+                # If E flag is set (1), jump to the address stored in the given register.
+                mask = 0b00000001
+                if self.FL & mask == 0b00000001:
+                    self.PC = self.reg[cmd_a]
+                    counter_advance -= 2  # adjust becuase we are jumping to the address
             elif op == JNE:
-                pass
+                # If E flag is clear (0), jump to the address stored in the given register.
+                # print(self.FL)
+                mask = 0b00000001
+                if self.FL & mask == 0b00000000:
+                    self.PC = self.reg[cmd_a]
+                    counter_advance -= 2  # adjust becuase we are jumping to the address
             else:
                 print("Error: not a valid instruction")
                 break
