@@ -17,6 +17,8 @@ CMP = 0b10100111
 JEQ = 0b01010101
 JNE = 0b01010110
 JMP = 0b01010100
+# op-codes for stretch
+OR = 0b10101010
 
 
 class CPU:
@@ -89,6 +91,8 @@ class CPU:
             elif self.reg[reg_a] == self.reg[reg_b]:
                 # print(f"{self.reg[cmd_a]} = {self.reg[cmd_b]}")
                 self.FL = 0b00000001
+        elif op == "OR":
+            self.reg[reg_a] = self.reg[reg_a] | self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -184,6 +188,9 @@ class CPU:
                 if self.FL & mask == 0b00000000:
                     self.PC = self.reg[cmd_a]
                     counter_advance -= 2  # adjust becuase we are jumping to the address
+            # ! stretch
+            elif op == OR:
+                self.alu("OR", cmd_a, cmd_b)
             else:
                 print("Error: not a valid instruction")
                 break
